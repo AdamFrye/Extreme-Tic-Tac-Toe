@@ -1,18 +1,42 @@
 import java.util.InputMismatchException;
+import java.util.Random;
 import java.util.Scanner;
+//TODO: move the checking if a move is valid into a method
+//TODO: make a single player option with a guy who makes random moves.
+//TODO: improve the win condition method by only checking row and colum of selRow and selCol.
+//TODO: add function to quit.
 public class Main {
     public static void main(String[] args) throws Exception {
         clearConsole();
         Scanner console = new Scanner(System.in);
 
+        //prompting for game mode (single player or multiplayer)
+        //TODO: add error handling.
+        System.out.println("Do you want to play single player or multiplayer?");
+        boolean singlePlayer;
+        switch (console.nextInt()){
+            case 1: singlePlayer = true; break;
+            case 2: singlePlayer = false; break;
+            default: singlePlayer = true;
+        }
+
+        //letting player choose which turn they want to take if single player is true
+        //TODO: add error handling.
+        int playerChoice = 1;
+        if (singlePlayer){
+            System.out.println("Do you want to play as X (1) or O (2)");
+            playerChoice = console.nextInt();
+        }
+
         //getting valid board size.
+        //TODO: improve error handling.
         System.out.println("Enter desired board size.");
         boolean validInput = false;
-        int boardSize = 1;
+        byte boardSize = 1;
         //error handling for boneheads.
         while(!validInput) {
             try {
-                boardSize = console.nextInt();
+                boardSize = console.nextByte();
                 validInput = true;
             } catch (InputMismatchException err){
                 clearConsole();
@@ -20,27 +44,49 @@ public class Main {
                 console.next();
             }
         }
-
         //in this board, 0 will be null space, 1 will be X, 2 will be O.
         int[][] board = new int[boardSize][boardSize];
 
         //if turn = 1, X will play, if turn = 2, O will play.
-        int userTurn = 1;
+        byte userTurn = 1;
         int turnCount = 1;
-        boolean gameOver = false;
         boolean invalidLocation = false;
-        while(!gameOver){
+        //main gameplay loop.
+        while(true){
             clearConsole();
             printBoard(board);
+
+            int selRow = 0;
+            int selCol = 0;
+            //taking the AI's turn.
+            if (singlePlayer && userTurn != playerChoice){
+                while(true){
+                    Random rand = new Random();
+                    selRow = rand.nextInt(0, board.length - 1);
+                    selCol = rand.nextInt(0, board.length - 1);
+                    if (checkValid(board, selRow, selCol)) break;
+                }
+                board[selRow][selCol] = userTurn;
+                switch (userTurn) {
+                    case 1: 
+                        userTurn = 2;
+                        break;
+                    case 2: 
+                        userTurn = 1;
+                        break;
+                }
+                turnCount++; 
+                continue;
+            }
+
             if (invalidLocation) {
                 System.out.println("Please enter a valid move");
                 invalidLocation = false;
             }
-            System.out.printf("Player %d, enter your move %n", userTurn);
 
             //getting users placement.
-            int selRow = 0;
-            int selCol = 0;
+            System.out.printf("Player %d, enter your move %n", userTurn);
+            
             //error handling for boneheads.
             try {
                 selRow = console.nextInt() - 1;
@@ -52,16 +98,8 @@ public class Main {
             }
             
             //making sure the moves are within bounds as well as not overlapping.
-            try {
-                if (board[selRow][selCol] > 0){
-                    invalidLocation = true;
-                    continue;
-                }
-            } catch (ArrayIndexOutOfBoundsException err){
-                invalidLocation = true;
-                continue;
-            }
-            board[selRow][selCol] = userTurn;
+            if (checkValid(board, selRow, selCol))
+                board[selRow][selCol] = userTurn;
             
             //checking win condition and printing win screen
             if (checkWinner(board, userTurn) || turnCount == Math.pow(board.length, 2)){
@@ -71,7 +109,7 @@ public class Main {
                     System.out.print("Tie game. Player 1 and Player 2 lose.");
                 else 
                     System.out.printf("Player %d Wins !!%n", userTurn);  
-                gameOver = true;
+                break;
             }
             
             turnCount++;
@@ -85,6 +123,7 @@ public class Main {
                     break;
             }
         }
+        console.close();
     }
 
     //method for clearing the console.
@@ -116,6 +155,18 @@ public class Main {
                 }
             System.out.println();
         }
+    }
+
+    //method to check if a move is valid
+    public static boolean checkValid(int[][] board, int selRow, int selCol){
+        try {
+            if (board[selRow][selCol] > 0){
+                return false;
+            }
+        } catch (ArrayIndexOutOfBoundsException err){
+            return false;
+        }
+        return true;
     }
 
     //long way of checking for winner. Could be done with recursion but idk which is faster.
