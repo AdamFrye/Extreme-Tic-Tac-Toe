@@ -1,10 +1,8 @@
 import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
-//TODO: move the checking if a move is valid into a method
-//TODO: make a single player option with a guy who makes random moves.
-//TODO: improve the win condition method by only checking row and colum of selRow and selCol.
 //TODO: add function to quit.
+//TODO: let the AI win.
 public class Main {
     public static void main(String[] args) throws Exception {
         clearConsole();
@@ -46,73 +44,69 @@ public class Main {
         }
         //in this board, 0 will be null space, 1 will be X, 2 will be O.
         int[][] board = new int[boardSize][boardSize];
+        // int[][] board = {{1,0,0},{0,0,0},{1,0,0}};
 
         //if turn = 1, X will play, if turn = 2, O will play.
         byte userTurn = 1;
         int turnCount = 1;
         boolean invalidLocation = false;
         //main gameplay loop.
-        while(true){
+        while(true) {
             clearConsole();
             printBoard(board);
 
-            int selRow = 0;
-            int selCol = 0;
+            //catching people who can't follow directions.
+            if (invalidLocation) {
+                System.out.println("Please enter a valid move");
+                invalidLocation = false;
+            }
+
+            int selRow = 1;
+            int selCol = 1;
+
             //taking the AI's turn.
             if (singlePlayer && userTurn != playerChoice){
                 while(true){
                     Random rand = new Random();
                     selRow = rand.nextInt(0, board.length - 1);
                     selCol = rand.nextInt(0, board.length - 1);
-                    if (checkValid(board, selRow, selCol)) break;
-                }
-                board[selRow][selCol] = userTurn;
-                switch (userTurn) {
-                    case 1: 
-                        userTurn = 2;
+                    if (checkValid(board, selRow, selCol)) {
+                        board[selRow][selCol] = userTurn;
                         break;
-                    case 2: 
-                        userTurn = 1;
-                        break;
+                    }
                 }
-                turnCount++; 
-                continue;
+            }
+            // //taking players turn.
+            else {
+                System.out.printf("Player %d, enter your move %n", userTurn);
+                try {
+                    selRow = console.nextInt() - 1;
+                    selCol = console.nextInt() - 1;
+                } catch (InputMismatchException err) {
+                    console.next();
+                    invalidLocation = true;
+                    continue;
+                }
+                if (checkValid(board, selRow, selCol))
+                    board[selRow][selCol] = userTurn;
+                else {
+                    invalidLocation = true;
+                    continue;
+                }
             }
 
-            if (invalidLocation) {
-                System.out.println("Please enter a valid move");
-                invalidLocation = false;
-            }
-
-            //getting users placement.
-            System.out.printf("Player %d, enter your move %n", userTurn);
-            
-            //error handling for boneheads.
-            try {
-                selRow = console.nextInt() - 1;
-                selCol = console.nextInt() - 1;
-            } catch (InputMismatchException err) {
-                console.next();
-                invalidLocation = true;
-                continue;
-            }
-            
-            //making sure the moves are within bounds as well as not overlapping.
-            if (checkValid(board, selRow, selCol))
-                board[selRow][selCol] = userTurn;
-            
             //checking win condition and printing win screen
-            if (checkWinner(board, userTurn) || turnCount == Math.pow(board.length, 2)){
+            if (checkWinner(board, userTurn, selRow, selCol)) {
                 clearConsole();
                 printBoard(board);
-                if (turnCount == Math.pow(board.length, 2))
-                    System.out.print("Tie game. Player 1 and Player 2 lose.");
-                else 
-                    System.out.printf("Player %d Wins !!%n", userTurn);  
+                System.out.printf("Player %d Wins !!%n", userTurn);
                 break;
             }
-            
-            turnCount++;
+            else if (turnCount == Math.pow(board.length, 2)) {
+                System.out.print("Tie game. Player 1 and Player 2 lose.");
+                break;
+            }
+
             //logic for switching turns.
             switch (userTurn) {
                 case 1: 
@@ -122,6 +116,7 @@ public class Main {
                     userTurn = 1;
                     break;
             }
+            turnCount++;
         }
         console.close();
     }
@@ -147,12 +142,13 @@ public class Main {
                 }
                 row++;
             }
-            else
+            else {
                 //for printing the horizontal hashes.
                 for (int j = 1; j < (3*board.length) + (board.length); j++) {
                     if (!(j % 4 == 0)) System.out.print("-");
                     else System.out.print("+");
                 }
+            }
             System.out.println();
         }
     }
@@ -160,31 +156,22 @@ public class Main {
     //method to check if a move is valid
     public static boolean checkValid(int[][] board, int selRow, int selCol){
         try {
-            if (board[selRow][selCol] > 0){
+            if (board[selRow][selCol] > 0)
                 return false;
-            }
-        } catch (ArrayIndexOutOfBoundsException err){
+        } catch (ArrayIndexOutOfBoundsException err) {
             return false;
         }
         return true;
     }
 
     //long way of checking for winner. Could be done with recursion but idk which is faster.
-    public static boolean checkWinner(int[][] board, int target){
+    public static boolean checkWinner(int[][] board, int target, int selRow, int selCol){
         //checks rows for X win.
-        for (int i = 0; i < board.length; i++){
-            for (int j = 0; j < board.length; j++){
-                if (board[i][j] != target) break;
-                else if (j == board.length-1) return true;
-            }
-        }
+        for (int j = 0; j < board.length && board[selRow][j] == target; j++)
+            if (j == board.length-1) return true;
         //check columns for win.
-        for (int j = 0; j < board.length; j++){
-            for (int i = 0; i < board.length; i++){
-                if (board[i][j] != target) break;
-                else if (i == board.length-1) return true;
-            }
-        }
+        for (int i = 0; i < board.length && board[i][selCol] == target; i++)
+            if (i == board.length-1) return true;
         //check left diagonal for win.
         for (int i = 0; i < board.length; i++){
             if (board[i][i] != target) break;
@@ -195,7 +182,6 @@ public class Main {
             if (board[i][j] != target) break;
             else if (i == board.length-1) return true;
         }
-
         return false;
     }
 }
