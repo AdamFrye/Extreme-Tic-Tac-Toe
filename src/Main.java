@@ -2,7 +2,6 @@ import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
 //TODO: add function to quit.
-//TODO: let the AI win.
 public class Main {
     public static void main(String[] args) throws Exception {
         clearConsole();
@@ -44,7 +43,8 @@ public class Main {
         }
         //in this board, 0 will be null space, 1 will be X, 2 will be O.
         int[][] board = new int[boardSize][boardSize];
-        // int[][] board = {{1,0,0},{0,0,0},{1,0,0}};
+        // int[][] board = {{1,1,1},{1,0,1},{1,1,1}};
+        // int[][] board = {{1,0},{0,0}};
 
         //if turn = 1, X will play, if turn = 2, O will play.
         byte userTurn = 1;
@@ -68,8 +68,8 @@ public class Main {
             if (singlePlayer && userTurn != playerChoice){
                 while(true){
                     Random rand = new Random();
-                    selRow = rand.nextInt(0, board.length - 1);
-                    selCol = rand.nextInt(0, board.length - 1);
+                    selRow = rand.nextInt(0, board.length);
+                    selCol = rand.nextInt(0, board.length);
                     if (checkValid(board, selRow, selCol)) {
                         board[selRow][selCol] = userTurn;
                         break;
