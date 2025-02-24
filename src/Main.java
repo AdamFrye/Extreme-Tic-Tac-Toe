@@ -7,46 +7,61 @@ public class Main {
         clearConsole();
         Scanner console = new Scanner(System.in);
 
-        //prompting for game mode (single player or multiplayer)
-        //TODO: add error handling.
-        System.out.println("Do you want to play single player or multiplayer?");
-        boolean singlePlayer;
-        switch (console.nextInt()){
-            case 1: singlePlayer = true; break;
-            case 2: singlePlayer = false; break;
-            default: singlePlayer = true;
-        }
-
-        //letting player choose which turn they want to take if single player is true
-        //TODO: add error handling.
-        int playerChoice = 1;
-        if (singlePlayer){
-            System.out.println("Do you want to play as X (1) or O (2)");
-            playerChoice = console.nextInt();
-        }
-
-        //getting valid board size.
-        //TODO: improve error handling.
-        System.out.println("Enter desired board size.");
-        boolean validInput = false;
-        byte boardSize = 1;
-        //error handling for boneheads.
-        while(!validInput) {
+        //Prompt for Single Player or Multiplayer.
+        boolean singlePlayer = true;
+        while (true) {
             try {
-                boardSize = console.nextByte();
-                validInput = true;
-            } catch (InputMismatchException err){
                 clearConsole();
-                System.out.println("Enter a VALID board size.");
+                System.out.println("Do you want to play Single Player (1) or Multiplayer (2)?");
+                switch (console.nextInt()){
+                    case 1: singlePlayer = true; break;
+                    case 2: singlePlayer = false; break;
+                    default: continue;
+                } 
+            } catch (InputMismatchException err) {
                 console.next();
+                continue;
             }
+            break;
         }
+
+        //Prompt for turn order (assuming Single Player was selected).
+        int playerChoice = 1;
+        while (singlePlayer) {
+            try {
+                clearConsole();
+                System.out.println("Do you want to play as X (1) or O (2)?");
+                switch (console.nextInt()){
+                    case 1: playerChoice = 1; break;
+                    case 2: playerChoice = 2; break;
+                    default: continue;
+                } 
+            } catch (InputMismatchException err) {
+                console.next();
+                continue;
+            }
+            break;
+        }
+
+        //Prompt for board size.
+        int boardSize = 1;
+        while (true) {
+            try {
+                clearConsole();
+                System.out.println("Enter desired board size.");
+                boardSize = console.nextInt(); 
+            } catch (InputMismatchException err) {
+                console.next();
+                continue;
+            }
+            break;
+        }
+
         //in this board, 0 will be null space, 1 will be X, 2 will be O.
         int[][] board = new int[boardSize][boardSize];
-        // int[][] board = {{1,1,1},{1,0,1},{1,1,1}};
-        // int[][] board = {{1,0},{0,0}};
 
         //if turn = 1, X will play, if turn = 2, O will play.
+        //userTurn can be replaced by a boolean because it's only ever 1 or 2. I'm just lazy.
         byte userTurn = 1;
         int turnCount = 1;
         boolean invalidLocation = false;
@@ -103,7 +118,9 @@ public class Main {
                 break;
             }
             else if (turnCount == Math.pow(board.length, 2)) {
-                System.out.print("Tie game. Player 1 and Player 2 lose.");
+                clearConsole();
+                printBoard(board);
+                System.out.println("Tie game. Player 1 and Player 2 lose.");
                 break;
             }
 
@@ -164,7 +181,9 @@ public class Main {
         return true;
     }
 
-    //long way of checking for winner. Could be done with recursion but idk which is faster.
+    //checking for winner along selRow and selCol. 
+    //Left diagonal only checks if selRow and selCol are equal.
+    //Right diagonal only checks if selRow + selCol equals the board length - 1. This is an interesting property im sure has been found before me.
     public static boolean checkWinner(int[][] board, int target, int selRow, int selCol){
         //checks rows for X win.
         for (int j = 0; j < board.length && board[selRow][j] == target; j++)
@@ -173,14 +192,18 @@ public class Main {
         for (int i = 0; i < board.length && board[i][selCol] == target; i++)
             if (i == board.length-1) return true;
         //check left diagonal for win.
-        for (int i = 0; i < board.length; i++){
-            if (board[i][i] != target) break;
-            else if (i == board.length-1) return true;
+        if (selRow == selCol){
+            for (int i = 0; i < board.length; i++){
+                if (board[i][i] != target) break;
+                else if (i == board.length-1) return true;
+            }
         }
         //check right diagonal for win.
-        for (int i = 0, j = board.length-1; i < board.length; i++, j--){
-            if (board[i][j] != target) break;
-            else if (i == board.length-1) return true;
+        if (selRow + selCol == board.length - 1){
+            for (int i = 0, j = board.length-1; i < board.length; i++, j--){
+                if (board[i][j] != target) break;
+                else if (i == board.length-1) return true;    
+            }
         }
         return false;
     }
